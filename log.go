@@ -10,12 +10,6 @@ import (
 	"github.com/lwch/runtime"
 )
 
-const (
-	levelDebug int = iota
-	levelInfo
-	levelError
-)
-
 func init() {
 	log.SetOutput(os.Stdout)
 	rand.Seed(time.Now().UnixNano())
