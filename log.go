@@ -17,26 +17,50 @@ func init() {
 
 // Debug debug log
 func Debug(fmt string, a ...interface{}) {
-	currentLogger.rotate()
-	if rand.Intn(1000) < 1 {
-		currentLogger.write("[DEBUG]"+fmt, a...)
-	}
+	currentLogger.Debug(fmt, a...)
 }
 
 // Info info log
 func Info(fmt string, a ...interface{}) {
-	currentLogger.rotate()
-	currentLogger.write("[INFO]"+fmt, a...)
+	currentLogger.Info(fmt, a...)
 }
 
 // Error error log
 func Error(fmt string, a ...interface{}) {
-	currentLogger.rotate()
-	trace := strings.Join(runtime.Trace("  + "), "\n")
-	currentLogger.write("[ERROR]"+fmt+"\n"+trace, a...)
+	currentLogger.Error(fmt, a...)
 }
 
 // Flush flush log
 func Flush() {
 	currentLogger.flush()
+}
+
+type Logger struct {
+	logger
+}
+
+// Debug debug log
+func (l Logger) Debug(fmt string, a ...interface{}) {
+	l.logger.rotate()
+	if rand.Intn(1000) < 1 {
+		l.logger.write("[DEBUG]"+fmt, a...)
+	}
+}
+
+// Info info log
+func (l Logger) Info(fmt string, a ...interface{}) {
+	l.logger.rotate()
+	l.logger.write("[INFO]"+fmt, a...)
+}
+
+// Error error log
+func (l Logger) Error(fmt string, a ...interface{}) {
+	l.logger.rotate()
+	trace := strings.Join(runtime.Trace("  + "), "\n")
+	l.logger.write("[ERROR]"+fmt+"\n"+trace, a...)
+}
+
+// Flush flush log
+func (l Logger) Flush() {
+	l.logger.flush()
 }

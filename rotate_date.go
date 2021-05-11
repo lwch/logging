@@ -13,7 +13,7 @@ import (
 	"github.com/lwch/runtime"
 )
 
-type rotateDateLogger struct {
+type RotateDateLogger struct {
 	sync.Mutex
 	dir        string
 	name       string
@@ -25,26 +25,26 @@ type rotateDateLogger struct {
 	l *log.Logger
 }
 
-func newRotateDateLogger(dir, name string, rotate int) *rotateDateLogger {
+func NewRotateDateLogger(dir, name string, rotate int) Logger {
 	os.MkdirAll(dir, 0755)
 	f, err := os.OpenFile(path.Join(dir, name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 	runtime.Assert(err)
-	return &rotateDateLogger{
+	return Logger{&RotateDateLogger{
 		dir:        dir,
 		name:       name,
 		date:       time.Now().Format("20060102"),
 		rotateDays: rotate,
 		f:          f,
 		l:          log.New(io.MultiWriter(os.Stdout, f), "", log.LstdFlags),
-	}
+	}}
 }
 
 // SetDateRotate set log rotate by date
 func SetDateRotate(dir, name string, rotate int) {
-	currentLogger = newRotateDateLogger(dir, name, rotate)
+	currentLogger = NewRotateDateLogger(dir, name, rotate)
 }
 
-func (l *rotateDateLogger) rotate() {
+func (l *RotateDateLogger) rotate() {
 	now := time.Now().Format("20060102")
 	if l.date == now {
 		return
@@ -66,10 +66,10 @@ func (l *rotateDateLogger) rotate() {
 	l.date = now
 }
 
-func (l *rotateDateLogger) write(fmt string, a ...interface{}) {
+func (l *RotateDateLogger) write(fmt string, a ...interface{}) {
 	l.l.Printf(fmt, a...)
 }
 
-func (l *rotateDateLogger) flush() {
+func (l *RotateDateLogger) flush() {
 	l.f.Sync()
 }

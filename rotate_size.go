@@ -31,13 +31,13 @@ type rotateSizeLogger struct {
 	lastCheck   time.Time
 }
 
-func newRotateLogger(dir, name string, size, rotate int) *rotateSizeLogger {
+func NewRotateSizeLogger(dir, name string, size, rotate int) Logger {
 	os.MkdirAll(dir, 0755)
 	f, err := os.OpenFile(path.Join(dir, name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 	runtime.Assert(err)
 	fi, err := f.Stat()
 	runtime.Assert(err)
-	return &rotateSizeLogger{
+	return Logger{&rotateSizeLogger{
 		dir:         dir,
 		name:        name,
 		rotateSize:  int64(size),
@@ -46,12 +46,12 @@ func newRotateLogger(dir, name string, size, rotate int) *rotateSizeLogger {
 		f:           f,
 		l:           log.New(io.MultiWriter(os.Stdout, f), "", log.LstdFlags),
 		lastCheck:   time.Now(),
-	}
+	}}
 }
 
 // SetDateRotate set log rotate by date
 func SetSizeRotate(dir, name string, size, rotate int) {
-	currentLogger = newRotateLogger(dir, name, size, rotate)
+	currentLogger = NewRotateSizeLogger(dir, name, size, rotate)
 }
 
 func (l *rotateSizeLogger) rotate() {
