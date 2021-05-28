@@ -31,12 +31,18 @@ type rotateSizeLogger struct {
 	lastCheck   time.Time
 }
 
-func NewRotateSizeLogger(dir, name string, size, rotate int) Logger {
+func NewRotateSizeLogger(dir, name string, size, rotate int, stdout bool) Logger {
 	os.MkdirAll(dir, 0755)
 	f, err := os.OpenFile(path.Join(dir, name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 	runtime.Assert(err)
 	fi, err := f.Stat()
 	runtime.Assert(err)
+	var w io.Writer
+	if stdout {
+		w = io.MultiWriter(os.Stdout, f)
+	} else {
+		w = f
+	}
 	return Logger{&rotateSizeLogger{
 		dir:         dir,
 		name:        name,
@@ -44,20 +50,22 @@ func NewRotateSizeLogger(dir, name string, size, rotate int) Logger {
 		rotateCount: rotate,
 		currentSize: int(fi.Size()),
 		f:           f,
-		l:           log.New(io.MultiWriter(os.Stdout, f), "", log.LstdFlags),
+		l:           log.New(w, "", log.LstdFlags),
 		lastCheck:   time.Now(),
 	}}
 }
 
 // SetDateRotate set log rotate by date
-func SetSizeRotate(dir, name string, size, rotate int) {
-	currentLogger = NewRotateSizeLogger(dir, name, size, rotate)
+func SetSizeRotate(dir, name string, size, rotate int, stdout bool) {
+	currentLogger = NewRotateSizeLogger(dir, name, size, rotate, stdout)
 }
 
 func (l *rotateSizeLogger) rotate() {
 	defer func() {
 		l.lastCheck = time.Now()
 	}()
+	l.Lock()
+	defer l.Unlock()
 	// 1% probability to rotate in high rate
 	if time.Since(l.lastCheck).Seconds() <= 1 {
 		if rand.Intn(100) > 0 {

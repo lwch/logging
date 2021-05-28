@@ -25,23 +25,29 @@ type RotateDateLogger struct {
 	l *log.Logger
 }
 
-func NewRotateDateLogger(dir, name string, rotate int) Logger {
+func NewRotateDateLogger(dir, name string, rotate int, stdout bool) Logger {
 	os.MkdirAll(dir, 0755)
 	f, err := os.OpenFile(path.Join(dir, name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 	runtime.Assert(err)
+	var w io.Writer
+	if stdout {
+		w = io.MultiWriter(os.Stdout, f)
+	} else {
+		w = f
+	}
 	return Logger{&RotateDateLogger{
 		dir:        dir,
 		name:       name,
 		date:       time.Now().Format("20060102"),
 		rotateDays: rotate,
 		f:          f,
-		l:          log.New(io.MultiWriter(os.Stdout, f), "", log.LstdFlags),
+		l:          log.New(w, "", log.LstdFlags),
 	}}
 }
 
 // SetDateRotate set log rotate by date
-func SetDateRotate(dir, name string, rotate int) {
-	currentLogger = NewRotateDateLogger(dir, name, rotate)
+func SetDateRotate(dir, name string, rotate int, stdout bool) {
+	currentLogger = NewRotateDateLogger(dir, name, rotate, stdout)
 }
 
 func (l *RotateDateLogger) rotate() {
@@ -49,6 +55,8 @@ func (l *RotateDateLogger) rotate() {
 	if l.date == now {
 		return
 	}
+	l.Lock()
+	defer l.Unlock()
 	files, _ := filepath.Glob(path.Join(l.dir, l.name+"_*.log"))
 	for _, file := range files {
 		date := strings.TrimPrefix(path.Base(file), l.name+"_")
