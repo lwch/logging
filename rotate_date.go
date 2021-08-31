@@ -2,7 +2,6 @@ package logging
 
 import (
 	"io"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -19,10 +18,11 @@ type RotateDateLogger struct {
 	name       string
 	date       string
 	rotateDays int
+	stdout     bool
 
 	// runtime
 	f *os.File
-	l *log.Logger
+	w *writer
 }
 
 func NewRotateDateLogger(dir, name string, rotate int, stdout bool) Logger {
@@ -40,8 +40,9 @@ func NewRotateDateLogger(dir, name string, rotate int, stdout bool) Logger {
 		name:       name,
 		date:       time.Now().Format("20060102"),
 		rotateDays: rotate,
+		stdout:     stdout,
 		f:          f,
-		l:          log.New(w, "", log.LstdFlags),
+		w:          newWriter(w),
 	}}
 }
 
@@ -70,12 +71,18 @@ func (l *RotateDateLogger) rotate() {
 		path.Join(l.dir, l.name+"_"+l.date+".log"))
 	l.f.Close()
 	l.f, _ = os.OpenFile(path.Join(l.dir, l.name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
-	l.l = log.New(io.MultiWriter(os.Stdout, l.f), "", log.LstdFlags)
+	var w io.Writer
+	if l.stdout {
+		w = io.MultiWriter(os.Stdout, l.f)
+	} else {
+		w = l.f
+	}
+	l.w = newWriter(w)
 	l.date = now
 }
 
 func (l *RotateDateLogger) write(fmt string, a ...interface{}) {
-	l.l.Printf(fmt, a...)
+	l.w.Printf(fmt, a...)
 }
 
 func (l *RotateDateLogger) flush() {

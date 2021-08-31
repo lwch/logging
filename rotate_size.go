@@ -3,7 +3,6 @@ package logging
 import (
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"os"
 	"path"
@@ -23,11 +22,12 @@ type rotateSizeLogger struct {
 	name        string
 	rotateSize  int64
 	rotateCount int
+	stdout      bool
 
 	// runtime
 	currentSize int
 	f           *os.File
-	l           *log.Logger
+	w           *writer
 	lastCheck   time.Time
 }
 
@@ -49,8 +49,9 @@ func NewRotateSizeLogger(dir, name string, size, rotate int, stdout bool) Logger
 		rotateSize:  int64(size),
 		rotateCount: rotate,
 		currentSize: int(fi.Size()),
+		stdout:      stdout,
 		f:           f,
-		l:           log.New(w, "", log.LstdFlags),
+		w:           newWriter(w),
 		lastCheck:   time.Now(),
 	}}
 }
@@ -101,11 +102,17 @@ func (l *rotateSizeLogger) rotate() {
 		path.Join(l.dir, fmt.Sprintf(l.name+".log.%d", latest+1)))
 	l.f.Close()
 	l.f, _ = os.OpenFile(path.Join(l.dir, l.name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
-	l.l = log.New(io.MultiWriter(os.Stdout, l.f), "", log.LstdFlags)
+	var w io.Writer
+	if l.stdout {
+		w = io.MultiWriter(os.Stdout, l.f)
+	} else {
+		w = l.f
+	}
+	l.w = newWriter(w)
 }
 
 func (l *rotateSizeLogger) write(fmt string, a ...interface{}) {
-	l.l.Printf(fmt, a...)
+	l.w.Printf(fmt, a...)
 }
 
 func (l *rotateSizeLogger) flush() {
