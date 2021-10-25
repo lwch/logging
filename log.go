@@ -30,6 +30,11 @@ func Error(fmt string, a ...interface{}) {
 	currentLogger.Error(fmt, a...)
 }
 
+// Write write log
+func Write(fmt string, a ...interface{}) {
+	currentLogger.Write(fmt, a...)
+}
+
 // Flush flush log
 func Flush() {
 	currentLogger.flush()
@@ -58,6 +63,12 @@ func (l Logger) Error(fmt string, a ...interface{}) {
 	l.logger.rotate()
 	trace := strings.Join(runtime.Trace("  + "), "\n")
 	l.logger.write("[ERROR]"+fmt+"\n"+trace, a...)
+}
+
+// Write write log
+func (l Logger) Write(fmt string, a ...interface{}) {
+	l.logger.rotate()
+	l.logger.write(fmt, a...)
 }
 
 // Flush flush log
