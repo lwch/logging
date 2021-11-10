@@ -17,27 +17,27 @@ func init() {
 
 // Debug debug log
 func Debug(fmt string, a ...interface{}) {
-	currentLogger.Debug(fmt, a...)
+	DefaultLogger.Debug(fmt, a...)
 }
 
 // Info info log
 func Info(fmt string, a ...interface{}) {
-	currentLogger.Info(fmt, a...)
+	DefaultLogger.Info(fmt, a...)
 }
 
 // Error error log
 func Error(fmt string, a ...interface{}) {
-	currentLogger.Error(fmt, a...)
+	DefaultLogger.Error(fmt, a...)
 }
 
-// Write write log
-func Write(fmt string, a ...interface{}) {
-	currentLogger.Write(fmt, a...)
+// Printf print log
+func Printf(fmt string, a ...interface{}) {
+	DefaultLogger.Printf(fmt, a...)
 }
 
 // Flush flush log
 func Flush() {
-	currentLogger.flush()
+	DefaultLogger.flush()
 }
 
 type Logger struct {
@@ -65,10 +65,17 @@ func (l Logger) Error(fmt string, a ...interface{}) {
 	l.logger.write("[ERROR]"+fmt+"\n"+trace, a...)
 }
 
-// Write write log
-func (l Logger) Write(fmt string, a ...interface{}) {
+// Printf print log
+func (l Logger) Printf(fmt string, a ...interface{}) {
 	l.logger.rotate()
 	l.logger.write(fmt, a...)
+}
+
+// Write write log
+func (l Logger) Write(data []byte) (int, error) {
+	l.logger.rotate()
+	l.logger.write(string(data))
+	return len(data), nil
 }
 
 // Flush flush log

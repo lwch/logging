@@ -8,7 +8,7 @@ type logger interface {
 	flush()
 }
 
-var currentLogger Logger = Logger{dummyLogger{}}
+var DefaultLogger Logger = Logger{dummyLogger{}}
 
 type dummyLogger struct{}
 

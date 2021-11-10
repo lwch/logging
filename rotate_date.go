@@ -48,7 +48,7 @@ func NewRotateDateLogger(dir, name string, rotate int, stdout bool) Logger {
 
 // SetDateRotate set log rotate by date
 func SetDateRotate(dir, name string, rotate int, stdout bool) {
-	currentLogger = NewRotateDateLogger(dir, name, rotate, stdout)
+	DefaultLogger = NewRotateDateLogger(dir, name, rotate, stdout)
 }
 
 func (l *RotateDateLogger) rotate() {
