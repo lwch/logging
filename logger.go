@@ -4,7 +4,8 @@ import "log"
 
 type logger interface {
 	rotate()
-	write(string, ...interface{})
+	printf(string, ...interface{})
+	write(string)
 	flush()
 }
 
@@ -13,7 +14,10 @@ var DefaultLogger Logger = Logger{dummyLogger{}}
 type dummyLogger struct{}
 
 func (l dummyLogger) rotate() {}
-func (l dummyLogger) write(fmt string, a ...interface{}) {
+func (l dummyLogger) printf(fmt string, a ...interface{}) {
 	log.Printf(fmt, a...)
+}
+func (l dummyLogger) write(str string) {
+	log.Print(str)
 }
 func (l dummyLogger) flush() {}

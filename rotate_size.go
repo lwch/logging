@@ -111,8 +111,12 @@ func (l *rotateSizeLogger) rotate() {
 	l.w = newWriter(w)
 }
 
-func (l *rotateSizeLogger) write(fmt string, a ...interface{}) {
+func (l *rotateSizeLogger) printf(fmt string, a ...interface{}) {
 	l.w.Printf(fmt, a...)
+}
+
+func (l *rotateSizeLogger) write(str string) {
+	l.w.Write(str)
 }
 
 func (l *rotateSizeLogger) flush() {

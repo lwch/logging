@@ -48,27 +48,27 @@ type Logger struct {
 func (l Logger) Debug(fmt string, a ...interface{}) {
 	l.logger.rotate()
 	if rand.Intn(1000) < 1 {
-		l.logger.write("[DEBUG]"+fmt, a...)
+		l.logger.printf("[DEBUG]"+fmt, a...)
 	}
 }
 
 // Info info log
 func (l Logger) Info(fmt string, a ...interface{}) {
 	l.logger.rotate()
-	l.logger.write("[INFO]"+fmt, a...)
+	l.logger.printf("[INFO]"+fmt, a...)
 }
 
 // Error error log
 func (l Logger) Error(fmt string, a ...interface{}) {
 	l.logger.rotate()
 	trace := strings.Join(runtime.Trace("  + "), "\n")
-	l.logger.write("[ERROR]"+fmt+"\n"+trace, a...)
+	l.logger.printf("[ERROR]"+fmt+"\n"+trace, a...)
 }
 
 // Printf print log
 func (l Logger) Printf(fmt string, a ...interface{}) {
 	l.logger.rotate()
-	l.logger.write(fmt, a...)
+	l.logger.printf(fmt, a...)
 }
 
 // Write write log

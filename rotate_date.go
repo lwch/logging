@@ -81,8 +81,12 @@ func (l *RotateDateLogger) rotate() {
 	l.date = now
 }
 
-func (l *RotateDateLogger) write(fmt string, a ...interface{}) {
+func (l *RotateDateLogger) printf(fmt string, a ...interface{}) {
 	l.w.Printf(fmt, a...)
+}
+
+func (l *RotateDateLogger) write(str string) {
+	l.w.Write(str)
 }
 
 func (l *RotateDateLogger) flush() {
