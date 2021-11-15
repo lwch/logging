@@ -74,7 +74,7 @@ func (l Logger) Printf(fmt string, a ...interface{}) {
 // Write write log
 func (l Logger) Write(data []byte) (int, error) {
 	l.logger.rotate()
-	l.logger.write(string(data))
+	l.logger.write(strings.TrimSuffix(string(data), "\n"))
 	return len(data), nil
 }
 
