@@ -61,8 +61,8 @@ func (l Logger) Info(fmt string, a ...interface{}) {
 // Error error log
 func (l Logger) Error(fmt string, a ...interface{}) {
 	l.logger.rotate()
-	trace := strings.Join(runtime.Trace("  + "), "\n")
-	l.logger.printf("[ERROR]"+fmt+"\n"+trace, a...)
+	trace := strings.Join(runtime.Trace("  + "), separator)
+	l.logger.printf("[ERROR]"+fmt+separator+trace, a...)
 }
 
 // Printf print log
