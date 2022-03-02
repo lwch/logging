@@ -1,9 +1,9 @@
 package logging
 
 import (
+	"errors"
 	"fmt"
 	"io"
-	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,94 +16,98 @@ import (
 	"github.com/lwch/runtime"
 )
 
-type rotateSizeLogger struct {
-	sync.Mutex
-	dir         string
-	name        string
-	rotateSize  int64
-	rotateCount int
-	stdout      bool
-
-	// runtime
-	currentSize int
-	f           *os.File
-	w           *writer
-	lastCheck   time.Time
+type SizeRotateConfig struct {
+	Dir         string
+	Name        string
+	Size        int64
+	Rotate      int
+	WriteStdout bool
+	WriteFile   bool
 }
 
-func NewRotateSizeLogger(dir, name string, size, rotate int, stdout bool) Logger {
-	os.MkdirAll(dir, 0755)
-	f, err := os.OpenFile(path.Join(dir, name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
-	runtime.Assert(err)
-	fi, err := f.Stat()
-	runtime.Assert(err)
-	var w io.Writer
-	if stdout {
-		w = io.MultiWriter(os.Stdout, f)
-	} else {
-		w = f
+type rotateSizeLogger struct {
+	sync.Mutex
+	cfg SizeRotateConfig
+
+	// runtime
+	f *os.File
+	w *writer
+}
+
+func NewRotateSizeLogger(cfg SizeRotateConfig) Logger {
+	var ws []io.Writer
+	if cfg.WriteStdout {
+		ws = append(ws, os.Stdout)
 	}
-	return Logger{&rotateSizeLogger{
-		dir:         dir,
-		name:        name,
-		rotateSize:  int64(size),
-		rotateCount: rotate,
-		currentSize: int(fi.Size()),
-		stdout:      stdout,
-		f:           f,
-		w:           newWriter(w),
-		lastCheck:   time.Now(),
-	}}
+	var f *os.File
+	if cfg.WriteFile {
+		os.MkdirAll(cfg.Dir, 0755)
+		var err error
+		f, err = os.OpenFile(path.Join(cfg.Dir, cfg.Name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+		runtime.Assert(err)
+		ws = append(ws, f)
+	}
+	if len(ws) == 0 {
+		panic(errors.New("no output"))
+	}
+	var w io.Writer
+	if len(ws) == 1 {
+		w = ws[0]
+	} else {
+		w = io.MultiWriter(ws[0], ws[1])
+	}
+	return Logger{
+		logger: &rotateSizeLogger{
+			cfg: cfg,
+			f:   f,
+			w:   newWriter(w),
+		},
+		lastCheck: time.Now(),
+	}
 }
 
 // SetDateRotate set log rotate by date
-func SetSizeRotate(dir, name string, size, rotate int, stdout bool) {
-	DefaultLogger = NewRotateSizeLogger(dir, name, size, rotate, stdout)
+func SetSizeRotate(cfg SizeRotateConfig) {
+	DefaultLogger = NewRotateSizeLogger(cfg)
 }
 
 func (l *rotateSizeLogger) rotate() {
-	defer func() {
-		l.lastCheck = time.Now()
-	}()
+	if !l.cfg.WriteFile {
+		return
+	}
 	l.Lock()
 	defer l.Unlock()
-	// 1% probability to rotate in high rate
-	if time.Since(l.lastCheck).Seconds() <= 1 {
-		if rand.Intn(100) > 0 {
-			return
-		}
-	}
 	fi, err := l.f.Stat()
 	if err != nil {
 		return
 	}
-	if fi.Size() < l.rotateSize {
+	if fi.Size() < l.cfg.Size {
 		return
 	}
-	files, err := filepath.Glob(path.Join(l.dir, l.name+".log.*"))
+	files, err := filepath.Glob(path.Join(l.cfg.Dir, l.cfg.Name+".log.*"))
 	if err != nil {
 		return
 	}
 	numbers := make([]int, 0, len(files))
 	for _, file := range files {
-		ver := strings.TrimPrefix(path.Base(file), l.name+".log.")
+		ver := strings.TrimPrefix(path.Base(file), l.cfg.Name+".log.")
 		n, _ := strconv.ParseInt(ver, 10, 64)
 		numbers = append(numbers, int(n))
 	}
 	sort.Ints(numbers)
-	for i := 0; i < len(numbers)-l.rotateCount+1; i++ {
-		os.Remove(path.Join(l.dir, fmt.Sprintf(l.name+".log.%d", numbers[i])))
+	for i := 0; i < len(numbers)-l.cfg.Rotate+1; i++ {
+		os.Remove(path.Join(l.cfg.Dir, fmt.Sprintf(l.cfg.Name+".log.%d", numbers[i])))
 	}
 	latest := 0
 	if len(numbers) > 0 {
 		latest = numbers[len(numbers)-1]
 	}
-	os.Rename(path.Join(l.dir, l.name+".log"),
-		path.Join(l.dir, fmt.Sprintf(l.name+".log.%d", latest+1)))
+	os.Rename(path.Join(l.cfg.Dir, l.cfg.Name+".log"),
+		path.Join(l.cfg.Dir, fmt.Sprintf(l.cfg.Name+".log.%d", latest+1)))
 	l.f.Close()
-	l.f, _ = os.OpenFile(path.Join(l.dir, l.name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+	l.f, _ = os.OpenFile(path.Join(l.cfg.Dir, l.cfg.Name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 	var w io.Writer
-	if l.stdout {
+	if l.cfg.WriteStdout {
 		w = io.MultiWriter(os.Stdout, l.f)
 	} else {
 		w = l.f
@@ -120,5 +124,8 @@ func (l *rotateSizeLogger) write(str string) {
 }
 
 func (l *rotateSizeLogger) flush() {
-	l.f.Sync()
+	f := l.f
+	if f != nil {
+		f.Sync()
+	}
 }

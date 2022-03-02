@@ -1,6 +1,9 @@
 package logging
 
-import "log"
+import (
+	"log"
+	"time"
+)
 
 type logger interface {
 	rotate()
@@ -9,7 +12,10 @@ type logger interface {
 	flush()
 }
 
-var DefaultLogger Logger = Logger{dummyLogger{}}
+var DefaultLogger Logger = Logger{
+	logger:    dummyLogger{},
+	lastCheck: time.Now(),
+}
 
 type dummyLogger struct{}
 

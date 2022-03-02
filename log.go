@@ -42,38 +42,67 @@ func Flush() {
 
 type Logger struct {
 	logger
+	lastCheck time.Time
+}
+
+func (l *Logger) rateLimit() bool {
+	if time.Since(l.lastCheck).Seconds() <= 1 {
+		if rand.Intn(100) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (l *Logger) resetLastCheck() {
+	l.lastCheck = time.Now()
 }
 
 // Debug debug log
-func (l Logger) Debug(fmt string, a ...interface{}) {
-	l.logger.rotate()
+func (l *Logger) Debug(fmt string, a ...interface{}) {
+	defer l.resetLastCheck()
+	if !l.rateLimit() {
+		l.logger.rotate()
+	}
 	if rand.Intn(1000) < 1 {
 		l.logger.printf("[DEBUG]"+fmt, a...)
 	}
 }
 
 // Info info log
-func (l Logger) Info(fmt string, a ...interface{}) {
-	l.logger.rotate()
+func (l *Logger) Info(fmt string, a ...interface{}) {
+	defer l.resetLastCheck()
+	if !l.rateLimit() {
+		l.logger.rotate()
+	}
 	l.logger.printf("[INFO]"+fmt, a...)
 }
 
 // Error error log
-func (l Logger) Error(fmt string, a ...interface{}) {
-	l.logger.rotate()
+func (l *Logger) Error(fmt string, a ...interface{}) {
+	defer l.resetLastCheck()
+	if !l.rateLimit() {
+		l.logger.rotate()
+	}
 	trace := strings.Join(runtime.Trace("  + "), separator)
 	l.logger.printf("[ERROR]"+fmt+separator+trace, a...)
 }
 
 // Printf print log
-func (l Logger) Printf(fmt string, a ...interface{}) {
-	l.logger.rotate()
+func (l *Logger) Printf(fmt string, a ...interface{}) {
+	defer l.resetLastCheck()
+	if !l.rateLimit() {
+		l.logger.rotate()
+	}
 	l.logger.printf(fmt, a...)
 }
 
 // Write write log
-func (l Logger) Write(data []byte) (int, error) {
-	l.logger.rotate()
+func (l *Logger) Write(data []byte) (int, error) {
+	defer l.resetLastCheck()
+	if !l.rateLimit() {
+		l.logger.rotate()
+	}
 	str := string(data)
 	str = strings.TrimSuffix(str, "\n")
 	str = strings.TrimSuffix(str, "\r")
@@ -82,6 +111,6 @@ func (l Logger) Write(data []byte) (int, error) {
 }
 
 // Flush flush log
-func (l Logger) Flush() {
+func (l *Logger) Flush() {
 	l.logger.flush()
 }
