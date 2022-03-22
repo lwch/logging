@@ -88,6 +88,15 @@ func (l *Logger) Error(fmt string, a ...interface{}) {
 	l.logger.printf("[ERROR]"+fmt+separator+trace, a...)
 }
 
+// Warning warning log
+func (l *Logger) Warning(fmt string, a ...interface{}) {
+	defer l.resetLastCheck()
+	if !l.rateLimit() {
+		l.logger.rotate()
+	}
+	l.logger.printf("[WARN]"+fmt, a...)
+}
+
 // Printf print log
 func (l *Logger) Printf(fmt string, a ...interface{}) {
 	defer l.resetLastCheck()
