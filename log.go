@@ -30,6 +30,11 @@ func Error(fmt string, a ...interface{}) {
 	DefaultLogger.Error(fmt, a...)
 }
 
+// Warning warning log
+func Warning(fmt string, a ...interface{}) {
+	DefaultLogger.Warning(fmt, a...)
+}
+
 // Printf print log
 func Printf(fmt string, a ...interface{}) {
 	DefaultLogger.Printf(fmt, a...)
