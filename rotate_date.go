@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -40,7 +39,7 @@ func NewRotateDateLogger(cfg DateRotateConfig) Logger {
 	if cfg.WriteFile {
 		os.MkdirAll(cfg.Dir, 0755)
 		var err error
-		f, err = os.OpenFile(path.Join(cfg.Dir, cfg.Name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+		f, err = os.OpenFile(filepath.Join(cfg.Dir, cfg.Name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 		runtime.Assert(err)
 		ws = append(ws, f)
 	}
@@ -79,19 +78,19 @@ func (l *RotateDateLogger) rotate() {
 	}
 	l.Lock()
 	defer l.Unlock()
-	files, _ := filepath.Glob(path.Join(l.cfg.Dir, l.cfg.Name+"_*.log"))
+	files, _ := filepath.Glob(filepath.Join(l.cfg.Dir, l.cfg.Name+"_*.log"))
 	for _, file := range files {
-		date := strings.TrimPrefix(path.Base(file), l.cfg.Name+"_")
+		date := strings.TrimPrefix(filepath.Base(file), l.cfg.Name+"_")
 		date = strings.TrimSuffix(date, ".log")
 		t, _ := time.Parse("20060102", date)
 		if time.Since(t).Hours() > float64(24*l.cfg.Rotate) {
 			os.Remove(file)
 		}
 	}
-	os.Rename(path.Join(l.cfg.Dir, l.cfg.Name+".log"),
-		path.Join(l.cfg.Dir, l.cfg.Name+"_"+l.date+".log"))
 	l.f.Close()
-	l.f, _ = os.OpenFile(path.Join(l.cfg.Dir, l.cfg.Name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+	os.Rename(filepath.Join(l.cfg.Dir, l.cfg.Name+".log"),
+		filepath.Join(l.cfg.Dir, l.cfg.Name+"_"+l.date+".log"))
+	l.f, _ = os.OpenFile(filepath.Join(l.cfg.Dir, l.cfg.Name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 	var w io.Writer
 	if l.cfg.WriteStdout {
 		w = io.MultiWriter(os.Stdout, l.f)

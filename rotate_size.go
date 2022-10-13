@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -43,7 +42,7 @@ func NewRotateSizeLogger(cfg SizeRotateConfig) Logger {
 	if cfg.WriteFile {
 		os.MkdirAll(cfg.Dir, 0755)
 		var err error
-		f, err = os.OpenFile(path.Join(cfg.Dir, cfg.Name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+		f, err = os.OpenFile(filepath.Join(cfg.Dir, cfg.Name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 		runtime.Assert(err)
 		ws = append(ws, f)
 	}
@@ -84,28 +83,28 @@ func (l *rotateSizeLogger) rotate() {
 	if fi.Size() < l.cfg.Size {
 		return
 	}
-	files, err := filepath.Glob(path.Join(l.cfg.Dir, l.cfg.Name+".log.*"))
+	files, err := filepath.Glob(filepath.Join(l.cfg.Dir, l.cfg.Name+".log.*"))
 	if err != nil {
 		return
 	}
 	numbers := make([]int, 0, len(files))
 	for _, file := range files {
-		ver := strings.TrimPrefix(path.Base(file), l.cfg.Name+".log.")
+		ver := strings.TrimPrefix(filepath.Base(file), l.cfg.Name+".log.")
 		n, _ := strconv.ParseInt(ver, 10, 64)
 		numbers = append(numbers, int(n))
 	}
 	sort.Ints(numbers)
 	for i := 0; i < len(numbers)-l.cfg.Rotate+1; i++ {
-		os.Remove(path.Join(l.cfg.Dir, fmt.Sprintf(l.cfg.Name+".log.%d", numbers[i])))
+		os.Remove(filepath.Join(l.cfg.Dir, fmt.Sprintf(l.cfg.Name+".log.%d", numbers[i])))
 	}
 	latest := 0
 	if len(numbers) > 0 {
 		latest = numbers[len(numbers)-1]
 	}
-	os.Rename(path.Join(l.cfg.Dir, l.cfg.Name+".log"),
-		path.Join(l.cfg.Dir, fmt.Sprintf(l.cfg.Name+".log.%d", latest+1)))
 	l.f.Close()
-	l.f, _ = os.OpenFile(path.Join(l.cfg.Dir, l.cfg.Name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+	os.Rename(filepath.Join(l.cfg.Dir, l.cfg.Name+".log"),
+		filepath.Join(l.cfg.Dir, fmt.Sprintf(l.cfg.Name+".log.%d", latest+1)))
+	l.f, _ = os.OpenFile(filepath.Join(l.cfg.Dir, l.cfg.Name+".log"), os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 	var w io.Writer
 	if l.cfg.WriteStdout {
 		w = io.MultiWriter(os.Stdout, l.f)
