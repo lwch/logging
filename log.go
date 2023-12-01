@@ -69,7 +69,7 @@ func (l *Logger) Debug(fmt string, a ...interface{}) {
 	if !l.rateLimit() {
 		l.logger.rotate()
 	}
-	if rand.Intn(1000) < 1 {
+	if l.currentLevel() >= LevelDebug {
 		l.logger.printf("[DEBUG]"+fmt, a...)
 	}
 }
@@ -80,7 +80,9 @@ func (l *Logger) Info(fmt string, a ...interface{}) {
 	if !l.rateLimit() {
 		l.logger.rotate()
 	}
-	l.logger.printf("[INFO]"+fmt, a...)
+	if l.currentLevel() >= LevelInfo {
+		l.logger.printf("[INFO]"+fmt, a...)
+	}
 }
 
 // Error error log
@@ -89,8 +91,10 @@ func (l *Logger) Error(fmt string, a ...interface{}) {
 	if !l.rateLimit() {
 		l.logger.rotate()
 	}
-	trace := strings.Join(runtime.Trace("  + "), separator)
-	l.logger.printf("[ERROR]"+fmt+separator+trace, a...)
+	if l.currentLevel() >= LevelError {
+		trace := strings.Join(runtime.Trace("  + "), separator)
+		l.logger.printf("[ERROR]"+fmt+separator+trace, a...)
+	}
 }
 
 // Warning warning log
@@ -99,7 +103,9 @@ func (l *Logger) Warning(fmt string, a ...interface{}) {
 	if !l.rateLimit() {
 		l.logger.rotate()
 	}
-	l.logger.printf("[WARN]"+fmt, a...)
+	if l.currentLevel() >= LevelWarn {
+		l.logger.printf("[WARN]"+fmt, a...)
+	}
 }
 
 // Printf print log

@@ -4,6 +4,7 @@ import "testing"
 
 func TestRotateSize(t *testing.T) {
 	SetSizeRotate(SizeRotateConfig{
+		Level:       LevelInfo,
 		Dir:         "./logs",
 		Name:        "test",
 		Size:        1024,

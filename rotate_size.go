@@ -16,6 +16,7 @@ import (
 )
 
 type SizeRotateConfig struct {
+	Level       Level
 	Dir         string
 	Name        string
 	Size        int64
@@ -68,6 +69,10 @@ func NewRotateSizeLogger(cfg SizeRotateConfig) Logger {
 // SetDateRotate set log rotate by date
 func SetSizeRotate(cfg SizeRotateConfig) {
 	DefaultLogger = NewRotateSizeLogger(cfg)
+}
+
+func (l *rotateSizeLogger) currentLevel() Level {
+	return l.cfg.Level
 }
 
 func (l *rotateSizeLogger) rotate() {

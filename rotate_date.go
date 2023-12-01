@@ -13,6 +13,7 @@ import (
 )
 
 type DateRotateConfig struct {
+	Level       Level
 	Dir         string
 	Name        string
 	Rotate      int
@@ -66,6 +67,10 @@ func NewRotateDateLogger(cfg DateRotateConfig) Logger {
 // SetDateRotate set log rotate by date
 func SetDateRotate(cfg DateRotateConfig) {
 	DefaultLogger = NewRotateDateLogger(cfg)
+}
+
+func (l *RotateDateLogger) currentLevel() Level {
+	return l.cfg.Level
 }
 
 func (l *RotateDateLogger) rotate() {
