@@ -14,7 +14,7 @@ type logger interface {
 	flush()
 }
 
-var DefaultLogger Logger = Logger{
+var DefaultLogger = Logger{
 	logger:    &dummyLogger{level: LevelInfo},
 	lastCheck: time.Now(),
 }
