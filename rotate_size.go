@@ -71,6 +71,10 @@ func SetSizeRotate(cfg SizeRotateConfig) {
 	DefaultLogger = NewRotateSizeLogger(cfg)
 }
 
+func (l *rotateSizeLogger) setLevel(level Level) {
+	l.cfg.Level = level
+}
+
 func (l *rotateSizeLogger) currentLevel() Level {
 	return l.cfg.Level
 }

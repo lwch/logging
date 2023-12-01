@@ -21,7 +21,7 @@ type DateRotateConfig struct {
 	WriteFile   bool
 }
 
-type RotateDateLogger struct {
+type rotateDateLogger struct {
 	sync.Mutex
 	date string
 	cfg  DateRotateConfig
@@ -54,7 +54,7 @@ func NewRotateDateLogger(cfg DateRotateConfig) Logger {
 		w = io.MultiWriter(ws[0], ws[1])
 	}
 	return Logger{
-		logger: &RotateDateLogger{
+		logger: &rotateDateLogger{
 			date: time.Now().Format("20060102"),
 			cfg:  cfg,
 			f:    f,
@@ -69,11 +69,15 @@ func SetDateRotate(cfg DateRotateConfig) {
 	DefaultLogger = NewRotateDateLogger(cfg)
 }
 
-func (l *RotateDateLogger) currentLevel() Level {
+func (l *rotateDateLogger) setLevel(level Level) {
+	l.cfg.Level = level
+}
+
+func (l *rotateDateLogger) currentLevel() Level {
 	return l.cfg.Level
 }
 
-func (l *RotateDateLogger) rotate() {
+func (l *rotateDateLogger) rotate() {
 	now := time.Now().Format("20060102")
 	if l.date == now {
 		return
@@ -106,15 +110,15 @@ func (l *RotateDateLogger) rotate() {
 	l.date = now
 }
 
-func (l *RotateDateLogger) printf(fmt string, a ...interface{}) {
+func (l *rotateDateLogger) printf(fmt string, a ...interface{}) {
 	l.w.Printf(fmt, a...)
 }
 
-func (l *RotateDateLogger) write(str string) {
+func (l *rotateDateLogger) write(str string) {
 	l.w.Write(str)
 }
 
-func (l *RotateDateLogger) flush() {
+func (l *rotateDateLogger) flush() {
 	f := l.f
 	if f != nil {
 		f.Sync()

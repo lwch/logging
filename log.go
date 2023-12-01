@@ -12,7 +12,11 @@ import (
 
 func init() {
 	log.SetOutput(os.Stdout)
-	rand.Seed(time.Now().UnixNano())
+}
+
+// SetLevel set log level
+func SetLevel(level Level) {
+	DefaultLogger.setLevel(level)
 }
 
 // Debug debug log
